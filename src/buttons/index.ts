@@ -1,48 +1,61 @@
 import { db, update_db } from '../records/records_handler'
-import {edit_count_message} from '../functions/edit_count_message'
+import { edit_count_message } from '../functions/edit_count_message'
+import { escape_markdown } from '../functions/escape_markdown'
 
-export async function cb_query_handler(ctx:any) {
+import { show_details } from './show_details'
+
+export async function cb_query_handler(ctx: any) {
     const query_data = ctx.update.callback_query.data;
-    const chat_id:number = ctx.chat.id
+    const chat_id = ctx.chat.id
     // if (ctx.update.callback_query && ctx.update.callback_query.date) {
     //     return
     //   }
-    ctx.answerCbQuery().catch((err:any) => {
+    ctx.answerCbQuery().catch((err: any) => {
         console.log(err);
     });
 
     let back_to_count_button = [[{ text: " <- back", callback_data: "count" }]]
 
-    if (query_data.match(/show_\d+/)) {
-        const index = query_data.spit('_')[1]
-        const counter = db[chat_id].counters[index]
-
-        const counter_message = 'Count of ' + counter.heart + " - " + counter.overall +
-            "\nTop users:\nnot implemented"
-
-        ctx.editMessageText(counter_message, {
-            parse_mode: "HTML",
+    if (query_data.match(/^show_\d+/)) {
+        show_details(ctx)
+        return
+    }
+    if (query_data === "count") {
+        edit_count_message(ctx, ctx.update.callback_query.message.message_id, db)
+        return
+    }
+    if (query_data.match(/^askdel_\d+/)) {
+        const index = query_data.split('_')[1]
+        const are_u_sure = "Are you sure you want to delete " + db[chat_id].counters[index].heart + " counter?"
+        ctx.editMessageText(
+            escape_markdown(are_u_sure), {
+            parse_mode: "MarkdownV2",
             reply_markup: {
-                inline_keyboard: back_to_count_button
+                inline_keyboard: [{ text: "Yes", callback_data: "del_" + index }, { text: "No", callback_data: "show_" + index }]
             }
-        })
+        }).catch((err:any)=>console.log(err))
+        return
+    }
+    if (query_data.match(/^del_\d+/)) {
+        const index = query_data.split('_')[1]
+        db[chat_id].counters.splice(index, 1)
+        await update_db(db)
+        await edit_count_message(ctx, ctx.update.callback_query.message.message_id, db)
         return
     }
     if (query_data === "new_counter") {
-        // console.log(ctx.update)
-        // console.log(ctx.update.callback_query.message)
-        db[ctx.chat.id].counters.push({ "overall": ctx.update.callback_query.message.message_id, users:{} })
+        const message_id = ctx.update.callback_query.message.message_id;
+        const newest_counter_id = db[ctx.chat.id].counters.length
+        db[ctx.chat.id].counters.push({ "overall": message_id, users: {} })
         await update_db(db)
 
         const creating_counter_message = "Reply to this message with symbols you want to count."
-        ctx.editMessageText(creating_counter_message, {
-            parse_mode: "HTML",
+        ctx.editMessageText(
+            escape_markdown(creating_counter_message), {
+            parse_mode: "MarkdownV2",
             reply_markup: {
-                inline_keyboard: back_to_count_button
+                inline_keyboard: [[{ text: " <- back", callback_data: "del_" + newest_counter_id}]]
             }
-        })
-    }
-    if (query_data === "count") {
-        edit_count_message(ctx, ctx.update.message.message_id, db)
+        }).catch((err:any)=>console.log(err))
     }
 }
