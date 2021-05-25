@@ -8,6 +8,7 @@ export interface chat {
 export interface counter {
     heart?: string,
     overall: number,
+    last_occurrence?: number,
     users: {[key: string]: count_of_user} 
 }
 export interface count_of_user {
