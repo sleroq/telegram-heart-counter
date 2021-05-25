@@ -6,7 +6,7 @@ import { db, update_db } from './records/records_handler'
 import { cb_query_handler } from './buttons/index'
 import { count_command } from './commands/count'
 import { edit_count_message } from './functions/edit_count_message'
-import { counter } from 'records'
+import { escape_regexp } from './functions/escape_regexp'
 
 const bot = new Telegraf(bot_token);
 
@@ -17,8 +17,19 @@ bot.command("count", async (ctx) => await count_command(ctx))
 bot.on("callback_query", async (ctx) => await cb_query_handler(ctx))
 
 bot.on("text", async ctx => {
+    const chat_id = ctx.chat.id
+    if (!db[chat_id]) {
+        db[chat_id] = {
+            language_code: ctx.message.from.language_code,
+            counters: []
+        }
+        update_db(db)
+    }
+    if (db[chat_id].counters.length === 0){
+        return
+    }
     const message_of_bot = ctx.message.reply_to_message;
-    const newest_counter = db[ctx.chat.id].counters[db[ctx.chat.id].counters.length - 1]
+    const newest_counter = db[chat_id].counters[db[chat_id].counters.length - 1]
     if (("reply_to_message" in ctx.message) && (message_of_bot.message_id === newest_counter.overall)) {
         newest_counter.heart = ctx.message.text;
         newest_counter.overall = 0;
@@ -27,15 +38,24 @@ bot.on("text", async ctx => {
         return
     }
 
-    const counters = db[ctx.chat.id].counters
+    const counters = db[chat_id].counters
     for (let i = 0; i < counters.length; i++) {
-        let heart = new RegExp(counters[i].heart)
+        if(!counters[i] || counters[i].heart == undefined){
+            return
+        }
+        let heart = new RegExp(
+            escape_regexp(counters[i].heart), 'g'
+        )
         if (counters[i].heart && ctx.message.text.match(heart)) {
             const occurrences = ctx.message.text.match(heart).length
             counters[i].overall += occurrences
+            counters[i].last_occurrence = ctx.message.message_id
             if (!counters[i].users[ctx.from.id]) {
                 counters[i].users[ctx.from.id] = {
                     count: 0
+                }
+                if (ctx.from.first_name){
+                    counters[i].users[ctx.from.id]
                 }
             }
             counters[i].users[ctx.from.id].count += occurrences
