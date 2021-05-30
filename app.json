@@ -1,0 +1,20 @@
+
+{
+    "name": "Heart-counter-bot",
+    "description": "Telegram bot that counts everything you want.",
+    "repository": "https://github.com/iamdowner/telegram-heart-counter",
+    "keywords": [
+        "Typescript",
+        "Heroku",
+        "Telegram"
+    ],
+    "env": {
+        "HEROKU_URL": {
+            "description": "<App Name as entered above>.herokuapp.com. For Example: my-heroku-app-name.herokuapp.com",
+            "value": "REPLACE ME.herokuapp.com"
+        },
+        "BOT_TOKEN": {
+            "description": "Your bot token from @Botfather"
+        }
+    }
+}
