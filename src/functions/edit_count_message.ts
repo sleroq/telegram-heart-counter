@@ -1,8 +1,12 @@
 import { records } from "records";
 import { Context } from "telegraf";
 import { escape_markdown } from './escape_markdown'
+import { get_top_users } from "../functions/top_users_message"
 
 export function edit_count_message(ctx: Context, edit_message_id: number, db: records) {
+    if(!db[ctx.chat.id]){
+        return
+    }
     const counters = db[ctx.chat.id].counters
     let keyboard = [[{ text: "New counter", callback_data: "new_counter" }]]
 
@@ -21,21 +25,23 @@ export function edit_count_message(ctx: Context, edit_message_id: number, db: re
     if (counters.length > 1) {
         counters_message = 'Counters:'
         counters.forEach((element, index) => {
-            if (!counters[0].heart) {
+            if (counters[0].heart) {
                 let button_text = element.heart + " - " + element.overall
                 keyboard.unshift([{ text: button_text, callback_data: "show_" + index }])
             }
         });
     } else {
-        counters_message = 'Count of ' + counters[0].heart + "\n" + counters[0].overall +
-            "\nTop users:\nnot implemented"
+        counters_message = 'Count of ' + counters[0].heart + " \\- " + counters[0].overall;
+        const counter = db[ctx.chat.id].counters[0]
+        if (Object.keys(counter.users).length !== 0) {
+            counters_message = get_top_users(counters_message, counter)
+        }
     }
-
     ctx.telegram.editMessageText(
         ctx.chat.id,
         edit_message_id,
         edit_message_id.toString(),
-        escape_markdown(counters_message),
+        counters_message,
         {
             parse_mode: "MarkdownV2",
             reply_markup: {
