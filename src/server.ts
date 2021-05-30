@@ -1,5 +1,8 @@
-import { bot_token, } from './config'
+import { bot_token, heroku_url, PORT } from './config'
 import { Telegraf } from 'telegraf'
+
+import express from "express";
+const expressApp = express();
 
 import { db, update_db } from './records/records_handler'
 
@@ -25,7 +28,7 @@ bot.on("text", async ctx => {
         }
         update_db(db)
     }
-    if (db[chat_id].counters.length === 0){
+    if (db[chat_id].counters.length === 0) {
         return
     }
     const message_of_bot = ctx.message.reply_to_message;
@@ -40,7 +43,7 @@ bot.on("text", async ctx => {
 
     const counters = db[chat_id].counters
     for (let i = 0; i < counters.length; i++) {
-        if(!counters[i] || counters[i].heart == undefined){
+        if (!counters[i] || counters[i].heart == undefined) {
             return
         }
         let heart = new RegExp(
@@ -54,13 +57,13 @@ bot.on("text", async ctx => {
                 counters[i].users[ctx.from.id] = {
                     count: 0
                 }
-                if (ctx.from.username){
+                if (ctx.from.username) {
                     counters[i].users[ctx.from.id].username = ctx.from.username
                 }
-                if (ctx.from.first_name){
+                if (ctx.from.first_name) {
                     counters[i].users[ctx.from.id].first_name = ctx.from.first_name
                 }
-                if (ctx.from.last_name){
+                if (ctx.from.last_name) {
                     counters[i].users[ctx.from.id].last_name = ctx.from.last_name
                 }
             }
@@ -71,13 +74,33 @@ bot.on("text", async ctx => {
 })
 
 
-
-start_bot_with_polling(bot)
+if (heroku_url) {
+    start_bot_with_webhook(bot, +PORT) // with webhook
+} else {
+    start_bot_with_polling(bot) // with polling
+}
 
 async function start_bot_with_polling(bot: any) {
-    // bot.polling.offset = await clearOldMessages(bot)
+    if(bot.polling){bot.polling.offset = await clearOldMessages(bot)}
     await bot.launch()
     console.log("Bot is started polling!")
+}
+
+async function start_bot_with_webhook(bot: any, PORT:number) {
+    if(bot.polling){bot.polling.offset = await clearOldMessages(bot)}
+    const port = PORT || 3000;
+    const url_for_webhook = heroku_url;
+
+    const webhook_answer = await bot.telegram.setWebhook(url_for_webhook + "/secret-path")
+    console.log('webhook set - ' + url_for_webhook + " " + webhook_answer)
+
+    expressApp.use(bot.webhookCallback("/secret-path"));
+    expressApp.get("/", (req:Request, res:any) => {
+        res.send("Hello, love <3");
+    });
+    expressApp.listen(port, () => {
+        console.log(`Bot is running on port ${port}`);
+    });
 }
 
 async function clearOldMessages(tgBot: any) {
