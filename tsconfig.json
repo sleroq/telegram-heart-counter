@@ -17,9 +17,6 @@
             ]
         }
     },
-    "exclude": [
-        "src/records/hearts.json"
-    ],
     "include": [
         "src/**/*"
     ]
