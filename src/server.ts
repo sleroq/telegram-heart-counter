@@ -54,8 +54,14 @@ bot.on("text", async ctx => {
                 counters[i].users[ctx.from.id] = {
                     count: 0
                 }
+                if (ctx.from.username){
+                    counters[i].users[ctx.from.id].username = ctx.from.username
+                }
                 if (ctx.from.first_name){
-                    counters[i].users[ctx.from.id]
+                    counters[i].users[ctx.from.id].first_name = ctx.from.first_name
+                }
+                if (ctx.from.last_name){
+                    counters[i].users[ctx.from.id].last_name = ctx.from.last_name
                 }
             }
             counters[i].users[ctx.from.id].count += occurrences
