@@ -5,8 +5,7 @@
   "main": "./built/server.js",
   "scripts": {
     "start": "node ./built/server.js",
-    "build": "echo \"{}\" > ./src/records/hearts.json & tsc",
-    "test": "tsc & node ./built/server.js"
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
