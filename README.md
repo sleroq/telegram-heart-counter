@@ -1,7 +1,7 @@
 # telegram-heart-counter
-telegram bot that counts everything you want
+Telegram bot that counts everything you want
 
-Bot have only one commang - /count which allows you to create counters for any symbols.</br>
+Bot has only one commang - /count to create counters for any symbols.</br>
 For example you can count hearts:</br>
 <img src="https://i.ibb.co/NYfzrRc/for-counter-s-github.jpg" alt="for-counter-s-github" border="0"></a>
 
